@@ -536,6 +536,9 @@ async function zotzenGet(args) {
                 name: `${c.name ? c.name : c.lastName + ', ' + c.firstName}`,
               };
             }),
+            keywords: zoteroItem.data.tags.map((c) => {
+              return `${c.tag}`;
+            }),
           };
           if (zoteroItem.data.date) {
             updateDoc.publication_date = zoteroItem.data.date;

@@ -184,7 +184,7 @@ function linkZotZen(zoteroKey, zenodoDoi, group, zoteroLink = null) {
   runCommandWithJsonFileInput(
     `${group ? '--group-id ' + group : ''} update-item --key ${zoteroKey}`,
     {
-      extra: `DOI: ${zenodoDoi}`,
+      DOI: `${zenodoDoi}`,
     }
   );
 

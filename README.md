@@ -5,7 +5,7 @@ A commandline tool to exchange data between Zotero and Zenodo, using the respect
 Requires the following two tools (which are installed alongside):
 
 - zenodo-cli from https://github.com/bjohas/zenodo-cli-python (deprecated) or https://github.com/bjohas/zenodo-cli-ts (maintained)
-- zotero-cli from https://github.com/edtechhub/zotero-cli
+- zotero-cli from https://github.com/brunob/zotero-cli
 
 ## Setup - Simple
 

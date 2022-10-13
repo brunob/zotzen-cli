@@ -61,6 +61,10 @@ parser.addArgument('--type', {
   help: 'Type of the attachments to be pushed.',
   defaultValue: 'all',
 });
+parser.addArgument('--pushurl', {
+  action: 'storeTrue',
+  help: 'Push Zotero item URL content to Zenodo.',
+});
 parser.addArgument('--publish', {
   action: 'storeTrue',
   help: 'Publish zenodo record.',
@@ -348,6 +352,49 @@ function pushAttachment(itemKey, key, fileName, doi, groupId, userId) {
   return doi;
 }
 
+function pushUrl(itemKey, itemURL, doi, groupId, userId) {
+  if (args.debug) {
+    console.log('DEBUG: pushAttachment');
+  }
+  console.log(`Pushing from Zotero to Zenodo: ${itemURL}`);
+  const fileName = runCommand(
+    `${
+      groupId ? '--group-id ' + groupId : ''
+    } item --key ${itemKey} --saveurl ../`
+  );
+  // TODO: What is the above command fails?
+  // TODO: Also, I've inserted "..." in case the filename contains spaces. However, really the filename should be made shell-proof.
+  // In perl, you would say:
+  //                           use String::ShellQuote; $safefilename = shell_quote($filename);
+  // There's no built-in for escaping. We can only escape special characters. We can do that if needed.
+  // All the command failures will throw an exception which will be caught on the top-level and a message will be printed.
+  const pushResult = runCommand(`upload ${doi} ../${fileName}`, false);
+  if (pushResult.status === 403) {
+    console.log(pushResult.message);
+    console.log('Creating new version.');
+    const newVersionResponse = runCommand(`newversion ${doi}`, false);
+    doi = doi.replace(
+      /zenodo.*/,
+      `zenodo.${
+        parseFromZenodoResponse(newVersionResponse, 'latest_draft')
+          .split('/')
+          .slice(-1)[0]
+      }`
+    );
+    linkZotZen(
+      itemKey,
+      doi,
+      groupId,
+      getZoteroSelectlink(userId || groupId, itemKey, !!groupId)
+    );
+    runCommand(`upload ${doi} ../${fileName}`, false);
+  }
+  fs.unlinkSync(fileName);
+  // TODO: How does the user know this was successful?
+  console.log('Upload successfull.'); //This shoukd be good enough. User can always use --show or --open to see/open the record.
+  return doi;
+}
+
 function linked(zenodoItem, zoteroLink) {
   if (args.debug) {
     console.log('DEBUG: linked');
@@ -585,6 +632,22 @@ async function zotzenGet(args) {
                 userId
               );
             });
+          }
+        }
+      }
+
+      if (args.pushurl) {
+        if (!syncErrors(doi, zenodoRawItem, zoteroSelectLink)) {
+          if (!zoteroItem.data.url) {
+            console.log('No URL found.');
+          } else {
+            doi = pushUrl(
+              itemKey,
+              zoteroItem.data.url,
+              doi,
+              groupId,
+              userId
+            );
           }
         }
       }
